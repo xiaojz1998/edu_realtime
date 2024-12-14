@@ -5,20 +5,29 @@ import com.alibaba.fastjson.JSONObject;
 import com.atguigu.edu.realtime.common.bean.TableProcess;
 import com.atguigu.edu.realtime.common.constant.Constant;
 import com.atguigu.edu.realtime.common.util.FlinkSourceUtil;
+import com.atguigu.edu.realtime.common.util.HBaseUtil;
+import com.atguigu.edu.realtime.dim.function.DimSinkFunction;
+import com.atguigu.edu.realtime.dim.function.TableProcessFunction;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.datastream.BroadcastConnectedStream;
+import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
+import org.apache.hadoop.hbase.client.Connection;
 
 import java.util.Arrays;
 import java.util.List;
@@ -108,6 +117,7 @@ public class DimApp {
         );
         //jsonObjDS.print("jsonObjDS");
 
+
         //TODO 5.使用FlinkCDC读取配置表中的配置信息
         MySqlSource<String> mySqlSource = FlinkSourceUtil.getMySqlSource("table_process");
         //"op":"r" {"before":null,"after":{"source_table":"financial_sku_cost","sink_table":"dim_financial_sku_cost","sink_family":"info","sink_columns":"id,sku_id,sku_name,busi_date,is_lastest,sku_cost,create_time","sink_row_key":"id"},"source":{"version":"1.9.7.Final","connector":"mysql","name":"mysql_binlog_source","ts_ms":0,"snapshot":"false","db":"gmall0620_config","sequence":null,"table":"table_process_dim","server_id":0,"gtid":null,"file":"","pos":0,"row":0,"thread":null,"query":null},"op":"r","ts_ms":1732870578960,"transaction":null}
@@ -117,7 +127,7 @@ public class DimApp {
         DataStreamSource<String> mysqlStrDS = env.fromSource(mySqlSource, WatermarkStrategy.noWatermarks(), "mysql_source").setParallelism(1);
         //mysqlStrDS.print("mysqlStrDS");
         // TODO 对流中数据进行类型转换   jsonStr->实体类对象
-        mysqlStrDS.map(
+        SingleOutputStreamOperator<TableProcess> tpDS = mysqlStrDS.map(
                 new MapFunction<String, TableProcess>() {
 
                     @Override
@@ -127,34 +137,76 @@ public class DimApp {
                         //获取对配置表进行的操作的类型
                         String op = jsonObject.getString("op");
                         TableProcess tableProcess = null;
-                        if("d".equals(op)){
+                        if ("d".equals(op)) {
                             //对配置表进行了删除操作   从before属性中获取删除前的信息
                             tableProcess = jsonObject.getObject("before", TableProcess.class);
-                        }else {
+                        } else {
                             //对配置表进行了读取、添加、更新操作  从after属性中获取最新的配置信息
                             tableProcess = jsonObject.getObject("after", TableProcess.class);
                         }
                         // 补充操作类型
                         tableProcess.setOp(op);
+                        tableProcess.setSinkFamily("info");
                         return tableProcess;
                     }
                 }
-        );
+        ).setParallelism(1);
+        //tpDS.print("tpDS");
+        //TODO 6.根据配置表中的配置信息在HBase中执行建表或者删表操作
+        tpDS = tpDS.map(
+                new RichMapFunction<TableProcess, TableProcess>() {
+                    private Connection hbaseConn;
 
+                    @Override
+                    public void open(Configuration parameters) throws Exception {
+                        hbaseConn = HBaseUtil.getHBaseConnection();
+                    }
+
+                    @Override
+                    public void close() throws Exception {
+                        HBaseUtil.closeHBaseConnection(hbaseConn);
+                    }
+
+                    @Override
+                    public TableProcess map(TableProcess tp) throws Exception {
+                        //获取对配置表进行操作的类型
+                        String op = tp.getOp();
+                        String sinkTable = tp.getSinkTable();
+                        String[] families = tp.getSinkFamily().split(",");
+                        if ("r".equals(op) || "c".equals(op)) {
+                            //从配置表中读取一条数据或者向配置表中添加一条配置  执行建表操作
+                            HBaseUtil.createHBaseTable(hbaseConn, Constant.HBASE_NAMESPACE, sinkTable, families);
+                        } else if ("d".equals(op)) {
+                            //从配置表中删除了一条配置  执行删表操作
+                            HBaseUtil.dropHBaseTable(hbaseConn, Constant.HBASE_NAMESPACE, sinkTable);
+                        } else {
+                            //对配置表中的某条数据进行了更新操作  先删表再建表
+                            HBaseUtil.dropHBaseTable(hbaseConn, Constant.HBASE_NAMESPACE, sinkTable);
+                            HBaseUtil.createHBaseTable(hbaseConn, Constant.HBASE_NAMESPACE, sinkTable, families);
+                        }
+                        return tp;
+                    }
+                }
+        ).setParallelism(1);
+//        tpDS.print("tpDS");
+
+        //TODO 广播配置流---broadcast  将主流和广播流进行关联---connect   对关联后的数据进行处理
+        MapStateDescriptor<String, TableProcess> mapStateDescriptor
+                = new MapStateDescriptor<String, TableProcess>("mapStateDescriptor",String.class, TableProcess.class);
+        BroadcastStream<TableProcess> broadcastDS = tpDS.broadcast(mapStateDescriptor);
+        BroadcastConnectedStream<JSONObject, TableProcess> connectDS = jsonObjDS.connect(broadcastDS);
+        SingleOutputStreamOperator<Tuple2<JSONObject, TableProcess>> dimDS = connectDS.process(
+                new TableProcessFunction(mapStateDescriptor)
+        );
+        //dimDS.print("dimDS");
+
+        dimDS.addSink(
+                new DimSinkFunction()
+        );
         try {
             env.execute();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    //过滤掉不需要保留的字段
-    // 传入值
-    //dataJsonObj: {"tm_name":"Redmi","create_time":"2021-12-14 00:00:00","logo_url":"aaabbbccc","id":1}
-    //sinkColumns: id,tm_name
-    private static void deleteNotNeedColumns(JSONObject dataJsonObj,String sinkColumns){
-        List<String> columnsList = Arrays.asList(sinkColumns.split(","));
-        Set<Map.Entry<String, Object>> entrySet = dataJsonObj.entrySet();
-        entrySet.removeIf(entry -> !columnsList.contains(entry.getKey()));
     }
 }

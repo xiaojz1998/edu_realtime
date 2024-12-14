@@ -26,6 +26,9 @@ import java.util.Set;
  *  操作HBase的工具类
  */
 public class HBaseUtil {
+
+
+
     //获取异步连接
     public static AsyncConnection getHBaseAsyncConnection(){
         try {
@@ -53,6 +56,7 @@ public class HBaseUtil {
             Configuration conf = new Configuration();
             conf.set("hbase.zookeeper.quorum","hadoop102,hadoop103,hadoop104,hadoop105,hadoop106");
             Connection hbaseConn = ConnectionFactory.createConnection(conf);
+            //System.out.println("~~~获取HBase连接成功~~~");
             return hbaseConn;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -205,7 +209,7 @@ public class HBaseUtil {
 
     public static void main(String[] args) {
         Connection hBaseConn = getHBaseConnection();
-        System.out.println(getRow(hBaseConn, Constant.HBASE_NAMESPACE, "dim_base_trademark", "1", JSONObject.class));
+        createHBaseTable(hBaseConn,"test","test1","cf");
         closeHBaseConnection(hBaseConn);
     }
 }
