@@ -29,6 +29,7 @@ public abstract class baseApp {
     public void start(int port,int parallelism,String ckAndGroupId,String topic){
         //TODO 1.基本环境准备
         //1.1 指定流处理环境
+        System.out.println("===========================================================================================");
         Configuration conf = new Configuration();
         conf.set(RestOptions.PORT,port);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(conf);
@@ -36,7 +37,7 @@ public abstract class baseApp {
         env.setParallelism(parallelism);
 
         //TODO 2.检查点相关的设置
-        env.enableCheckpointing(5000L, CheckpointingMode.EXACTLY_ONCE);
+        env.enableCheckpointing(3000L, CheckpointingMode.EXACTLY_ONCE);
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3,3000L));
         /*
         //2.1 开启检查点
