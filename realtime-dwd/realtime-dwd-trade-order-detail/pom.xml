@@ -3,31 +3,18 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>edu-realtime</artifactId>
+        <artifactId>realtime-dwd</artifactId>
         <groupId>com.atguigu</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
-    <modules>
-        <module>realtime-dwd-base-log</module>
-        <module>realtime-dwd-trade-order-detail</module>
-    </modules>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>realtime-dwd</artifactId>
+    <artifactId>realtime-dwd-trade-order-detail</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    <dependencies>
-        <dependency>
-            <groupId>com.atguigu</groupId>
-            <artifactId>realtime-common</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 
 </project>
