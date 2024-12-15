@@ -10,6 +10,8 @@
     <packaging>pom</packaging>
     <modules>
         <module>realtime-dwd-base-log</module>
+        <module>realtime-dwd-traffic-unique-visitor-detail</module>
+        <module>realtime-dwd-traffic-user-jump-detail</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
