@@ -15,6 +15,7 @@ import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
@@ -50,7 +51,7 @@ public class DwsExaminationPaperExamWindow extends BaseApp {
                     @Override
                     public DwsExaminationPaperExamWindowBean map(String s) throws Exception {
                         JSONObject jsonObject = JSON.parseObject(s);
-                        long ts = jsonObject.getLong("ts") * 1000;
+                        long ts = jsonObject.getLong("ts") ;
                         Double score = jsonObject.getDouble("score");
                         return DwsExaminationPaperExamWindowBean.builder()
                                 .paperId(jsonObject.getString("paper_id"))
@@ -65,7 +66,7 @@ public class DwsExaminationPaperExamWindow extends BaseApp {
         mapDS.print();
         // TODO 添加水位线
         SingleOutputStreamOperator<DwsExaminationPaperExamWindowBean> withWatermarkDS = mapDS.assignTimestampsAndWatermarks(
-                WatermarkStrategy.<DwsExaminationPaperExamWindowBean>forBoundedOutOfOrderness(Duration.ofSeconds(5l))
+                WatermarkStrategy.<DwsExaminationPaperExamWindowBean>forBoundedOutOfOrderness(Duration.ZERO)
                         .withTimestampAssigner(
                                 new SerializableTimestampAssigner<DwsExaminationPaperExamWindowBean>() {
                                     @Override
@@ -77,7 +78,7 @@ public class DwsExaminationPaperExamWindow extends BaseApp {
         );
         // TODO 分组 开窗 聚合
         KeyedStream<DwsExaminationPaperExamWindowBean, String> withKeyedDS = withWatermarkDS.keyBy(DwsExaminationPaperExamWindowBean::getPaperId);
-        WindowedStream<DwsExaminationPaperExamWindowBean, String, TimeWindow> withWindowDS = withKeyedDS.window(TumblingEventTimeWindows.of(Time.seconds(10)));
+        WindowedStream<DwsExaminationPaperExamWindowBean, String, TimeWindow> withWindowDS = withKeyedDS.window(TumblingProcessingTimeWindows.of(Time.seconds(10)));
         SingleOutputStreamOperator<DwsExaminationPaperExamWindowBean> reduceDS = withWindowDS.reduce(
                 new ReduceFunction<DwsExaminationPaperExamWindowBean>() {
                     @Override

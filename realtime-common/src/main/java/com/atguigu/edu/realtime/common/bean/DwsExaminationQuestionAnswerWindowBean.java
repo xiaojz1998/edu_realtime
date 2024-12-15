@@ -7,48 +7,39 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Title: DwsExaminationPaperExamWindowBean
- * Create on: 2024/12/16 2:18
+ * Title: DwsExaminationQuestionAnswerWindowBean
+ * Create on: 2024/12/16 5:23
  *
  * @author Xiao Jianzhe
  * @version 1.0.0
  * Description:
- *  考试域试卷粒度考试各窗口汇总表
+ *  考试域题目粒度答题各窗口汇总表
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class DwsExaminationPaperExamWindowBean {
+public class DwsExaminationQuestionAnswerWindowBean {
     // 窗口起始时间
     String stt;
 
     // 窗口结束时间
     String edt;
-
     // 当天日期
     String curDate;
 
-    // 试卷 ID
-    String paperId;
 
-    // 试卷名称
-    String paperTitle;
+    // 题目 ID
+    String question_id;
 
-    // 课程 ID
-    String courseId;
+    // 题目内容
+    String question_txt;
 
-    // 课程名称
-    String courseName;
+    // 正确答题次数
+    Long correctAnswerCount;
 
-    // 考试人次
-    Long examTakenCount;
-
-    // 考试总分
-    Long examTotalScore;
-
-    // 考试总时长
-    Long examTotalDuringSec;
+    // 答题次数
+    Long answer_count;
 
     // 时间戳
     @JSONField(serialize = false)

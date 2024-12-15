@@ -7,19 +7,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Title: DwsExaminationPaperExamWindowBean
- * Create on: 2024/12/16 2:18
+ * Title: DwsExaminationPaperScoreDurationExamWindowBea
+ * Create on: 2024/12/16 5:20
  *
  * @author Xiao Jianzhe
  * @version 1.0.0
  * Description:
- *  考试域试卷粒度考试各窗口汇总表
+ * 考试域试卷分数段粒度考试各窗口汇总表
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class DwsExaminationPaperExamWindowBean {
+public class DwsExaminationPaperScoreDurationExamWindowBea {
     // 窗口起始时间
     String stt;
 
@@ -29,26 +29,18 @@ public class DwsExaminationPaperExamWindowBean {
     // 当天日期
     String curDate;
 
+
     // 试卷 ID
-    String paperId;
+    String paper_id;
 
     // 试卷名称
-    String paperTitle;
+    String paper_title;
 
-    // 课程 ID
-    String courseId;
+    // 分数段
+    String score_duration;
 
-    // 课程名称
-    String courseName;
-
-    // 考试人次
-    Long examTakenCount;
-
-    // 考试总分
-    Long examTotalScore;
-
-    // 考试总时长
-    Long examTotalDuringSec;
+    // 用户数
+    Long user_count;
 
     // 时间戳
     @JSONField(serialize = false)
