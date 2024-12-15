@@ -13,6 +13,8 @@
         <module>realtime-dwd-trade-order-detail</module>
         <module>realtime-dwd-traffic-unique-visitor-detail</module>
         <module>realtime-dwd-traffic-user-jump-detail</module>
+        <module>realtime-dwd-trade-order-pay-suc-detail</module>
+        <module>realtime-dwd-base-db</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 

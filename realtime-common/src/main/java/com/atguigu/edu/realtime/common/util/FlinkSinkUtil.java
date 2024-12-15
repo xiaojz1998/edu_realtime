@@ -1,6 +1,7 @@
 package com.atguigu.edu.realtime.common.util;
 
 import com.alibaba.fastjson.JSONObject;
+import com.atguigu.edu.realtime.common.bean.DwdTableProcess;
 import com.atguigu.edu.realtime.common.constant.Constant;
 import org.apache.doris.flink.cfg.DorisExecutionOptions;
 import org.apache.doris.flink.cfg.DorisOptions;
@@ -54,23 +55,23 @@ public class FlinkSinkUtil {
                 .build();
         return kafkaSink;
     }
-//    public static KafkaSink<Tuple2<JSONObject, TableProcessDwd>> getKafkaSink(){
-//
-//        KafkaSink<Tuple2<JSONObject, TableProcessDwd>> kafkaSink = KafkaSink.<Tuple2<JSONObject, TableProcessDwd>>builder()
-//                .setBootstrapServers(Constant.KAFKA_BROKERS)
-//                .setRecordSerializer(new KafkaRecordSerializationSchema<Tuple2<JSONObject, TableProcessDwd>>() {
-//                    @Nullable
-//                    @Override
-//                    public ProducerRecord<byte[], byte[]> serialize(Tuple2<JSONObject, TableProcessDwd> tup2, KafkaSinkContext context, Long timestamp) {
-//                        JSONObject jsonObj = tup2.f0;
-//                        TableProcessDwd tableProcessDwd = tup2.f1;
-//                        String topic = tableProcessDwd.getSinkTable();
-//                        return new ProducerRecord<byte[], byte[]>(topic,jsonObj.toJSONString().getBytes());
-//                    }
-//                })
-//                .build();
-//        return kafkaSink;
-//    }
+    public static KafkaSink<Tuple2<JSONObject, DwdTableProcess>> getKafkaSink(){
+
+        KafkaSink<Tuple2<JSONObject, DwdTableProcess>> kafkaSink = KafkaSink.<Tuple2<JSONObject, DwdTableProcess>>builder()
+                .setBootstrapServers(Constant.KAFKA_BROKERS)
+                .setRecordSerializer(new KafkaRecordSerializationSchema<Tuple2<JSONObject, DwdTableProcess>>() {
+                    @Nullable
+                    @Override
+                    public ProducerRecord<byte[], byte[]> serialize(Tuple2<JSONObject, DwdTableProcess> tup2, KafkaSinkContext context, Long timestamp) {
+                        JSONObject jsonObj = tup2.f0;
+                        DwdTableProcess dwdTableProcess = tup2.f1;
+                        String topic = dwdTableProcess.getSinkTable();
+                        return new ProducerRecord<byte[], byte[]>(topic,jsonObj.toJSONString().getBytes());
+                    }
+                })
+                .build();
+        return kafkaSink;
+    }
 
     public static <T>KafkaSink<T> getKafkaSink(KafkaRecordSerializationSchema<T> krs){
         KafkaSink<T> kafkaSink = KafkaSink.<T>builder()

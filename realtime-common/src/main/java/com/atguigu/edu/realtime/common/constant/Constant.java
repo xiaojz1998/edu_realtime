@@ -34,7 +34,7 @@ public class Constant {
 
     public static final String TOPIC_DWD_TRAFFIC_UNIQUE_VISITOR_DETAIL = "dwd_traffic_unique_visitor_detail";
     public static final String TOPIC_DWD_TRADE_ORDER_DETAIL = "dwd_trade_order_detail";
-
+    public static final String TOPIC_DWD_TRADE_ORDER_PAYMENT_SUCCESS = "dwd_trade_order_payment_success";
 
     /*
     public static final String TOPIC_DWD_TRAFFIC_START = "dwd_traffic_start";
