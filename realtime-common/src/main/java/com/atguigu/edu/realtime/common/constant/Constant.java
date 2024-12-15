@@ -32,7 +32,10 @@ public class Constant {
 
     public static final String TOPIC_DWD_TRAFFIC_APPVIDEO = "dwd_traffic_appVideo";
 
+    public static final String TOPIC_DWD_TRAFFIC_UNIQUE_VISITOR_DETAIL = "dwd_traffic_unique_visitor_detail";
     public static final String TOPIC_DWD_TRADE_ORDER_DETAIL = "dwd_trade_order_detail";
+
+
     /*
     public static final String TOPIC_DWD_TRAFFIC_START = "dwd_traffic_start";
     public static final String TOPIC_DWD_TRAFFIC_ERR = "dwd_traffic_err";
@@ -43,7 +46,7 @@ public class Constant {
     public static final String TOPIC_DWD_INTERACTION_COMMENT_INFO = "dwd_interaction_comment_info";
     public static final String TOPIC_DWD_TRADE_CART_ADD = "dwd_trade_cart_add";
 
-
+    public static final String TOPIC_DWD_TRADE_ORDER_DETAIL = "dwd_trade_order_detail";
 
     public static final String TOPIC_DWD_TRADE_ORDER_CANCEL = "dwd_trade_order_cancel";
 

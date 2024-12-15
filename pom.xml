@@ -136,12 +136,19 @@
             <scope>provided</scope>
         </dependency>
 
+
     </dependencies>
 
 
     <dependencyManagement>
 
         <dependencies>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-cep</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.alibaba</groupId>
