@@ -113,7 +113,7 @@ public class DwdBaseLog extends baseApp {
         //3.1 定义侧输出流标签
         OutputTag<String> errTag = new OutputTag<String>("errTag"){};
         OutputTag<String> startTag = new OutputTag<String>("startTag"){};
-        OutputTag<String> displaysTag = new OutputTag<String>("displaysrTag"){};
+        OutputTag<String> displaysTag = new OutputTag<String>("displaysTag"){};
         OutputTag<String> actionsTag = new OutputTag<String>("actionsTag"){};
         OutputTag<String> appVideoTag = new OutputTag<String>("appVideoTag"){};
         //3.2 分流
@@ -145,7 +145,7 @@ public class DwdBaseLog extends baseApp {
                             //过滤页面日志所需字段page common ts
                             JSONObject commonJsonObject = jsonObject.getJSONObject("common");
                             Long ts = jsonObject.getLong("ts");
-                            JSONArray displayArr = pageJsonObject.getJSONArray("display");
+                            JSONArray displayArr = jsonObject.getJSONArray("displays");
                             if (displayArr != null && displayArr.size() > 0) { //双重判断：displayArr可能是空的集合或数组，可以防止空指针异常
                                 //曝光日志
                                 //遍历曝光数据
@@ -160,17 +160,17 @@ public class DwdBaseLog extends baseApp {
                                     //放到曝光侧输出流中
                                     context.output(displaysTag, newDisplayJson.toJSONString());
                                 }
-                                jsonObject.remove("display");//将曝光数据去除
+                                jsonObject.remove("displays");//将曝光数据去除
                             }
                             //动作日志
-                            JSONArray actionsArr = pageJsonObject.getJSONArray("actions");
+                            JSONArray actionsArr = jsonObject.getJSONArray("actions");
                             if (actionsArr != null && actionsArr.size() > 0) {
                                 for (int i = 0; i < actionsArr.size(); i++) {
                                     JSONObject actionsObj = actionsArr.getJSONObject(i); //得到数组中每一个元素
                                     JSONObject newActionsObj = new JSONObject();
                                     newActionsObj.put("common", commonJsonObject);
                                     newActionsObj.put("page", pageJsonObject);
-                                    newActionsObj.put("action", actionsObj);
+                                    newActionsObj.put("actions", actionsObj);
                                     newActionsObj.put("ts", ts);
                                     context.output(actionsTag, newActionsObj.toJSONString());
                                 }
