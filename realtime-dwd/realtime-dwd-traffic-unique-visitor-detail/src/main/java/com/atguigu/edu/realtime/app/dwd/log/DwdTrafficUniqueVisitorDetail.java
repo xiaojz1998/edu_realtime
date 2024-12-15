@@ -2,7 +2,7 @@ package com.atguigu.edu.realtime.app.dwd.log;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.atguigu.edu.realtime.common.base.baseApp;
+import com.atguigu.edu.realtime.common.base.BaseApp;
 import com.atguigu.edu.realtime.common.constant.Constant;
 import com.atguigu.edu.realtime.common.util.DateFormatUtil;
 import com.atguigu.edu.realtime.common.util.FlinkSinkUtil;
@@ -30,7 +30,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  *    任务：流量域独立访客事务事实表，过滤页面数据中的独立访客访问记录。
  *    需要启动进程：zk，kf，flume，DwdBaseLog，DwdTrafficUniqueVisitorDetail
  */
-public class DwdTrafficUniqueVisitorDetail extends baseApp {
+public class DwdTrafficUniqueVisitorDetail extends BaseApp {
     public static void main(String[] args) {
         new DwdTrafficUniqueVisitorDetail().start(
                 10012,4,"dwd_traffic_unique_visitor_detail", Constant.TOPIC_DWD_TRAFFIC_PAGE

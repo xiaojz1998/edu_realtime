@@ -25,7 +25,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  *          定义模板
  *          在模板（步骤）固定的前提下，每一个子类都可以有自己不同的实现
  */
-public abstract class baseApp {
+public abstract class BaseApp {
     public void start(int port,int parallelism,String ckAndGroupId,String topic){
         //TODO 1.基本环境准备
         //1.1 指定流处理环境

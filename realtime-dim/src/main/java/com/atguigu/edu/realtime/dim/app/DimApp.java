@@ -2,7 +2,7 @@ package com.atguigu.edu.realtime.dim.app;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.atguigu.edu.realtime.common.base.baseApp;
+import com.atguigu.edu.realtime.common.base.BaseApp;
 import com.atguigu.edu.realtime.common.bean.TableProcess;
 import com.atguigu.edu.realtime.common.constant.Constant;
 import com.atguigu.edu.realtime.common.util.FlinkSourceUtil;
@@ -13,27 +13,17 @@ import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.RestOptions;
-import org.apache.flink.connector.kafka.source.KafkaSource;
-import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.BroadcastConnectedStream;
 import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.hadoop.hbase.client.Connection;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Title: DimApp
@@ -46,7 +36,7 @@ import java.util.Set;
  *  需要启动的进程:
  *    zk、kafka、maxwell、hdfs、hbase、DimApp
  */
-public class DimApp extends baseApp {
+public class DimApp extends BaseApp {
     public static void main(String[] args) {
 
         new DimApp().start(

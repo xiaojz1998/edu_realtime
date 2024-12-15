@@ -3,14 +3,13 @@ package com.atguigu.edu.realtime.dwd.db.split;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.atguigu.edu.realtime.common.base.baseApp;
+import com.atguigu.edu.realtime.common.base.BaseApp;
 import com.atguigu.edu.realtime.common.constant.Constant;
 import com.atguigu.edu.realtime.common.util.DateFormatUtil;
 import com.atguigu.edu.realtime.common.util.FlinkSinkUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
@@ -34,7 +33,7 @@ import org.apache.flink.util.OutputTag;
  *      zk、kafka、flume、DwdBaseLog
  */
 
-public class DwdBaseLog extends baseApp {
+public class DwdBaseLog extends BaseApp {
     public static void main(String[] args) {
         new DwdBaseLog().start(10011,4,"dwd_base_log", Constant.TOPIC_LOG);
     }

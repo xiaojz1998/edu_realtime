@@ -2,13 +2,12 @@ package com.atguigu.edu.realtime.dwd.db.split.app;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.atguigu.edu.realtime.common.base.baseApp;
+import com.atguigu.edu.realtime.common.base.BaseApp;
 import com.atguigu.edu.realtime.common.bean.DwdTableProcess;
 import com.atguigu.edu.realtime.common.constant.Constant;
 import com.atguigu.edu.realtime.common.util.FlinkSinkUtil;
 import com.atguigu.edu.realtime.common.util.FlinkSourceUtil;
 import com.atguigu.edu.realtime.common.util.JdbcUtil;
-import com.mysql.cj.xdevapi.Table;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -38,7 +37,7 @@ import java.util.*;
  * Description:
  *       zk、kafka、maxwell、DwdBaseDb
  */
-public class DwdBaseDb extends baseApp {
+public class DwdBaseDb extends BaseApp {
     public static void main(String[] args) {
         new DwdBaseDb().start(
                 10019,

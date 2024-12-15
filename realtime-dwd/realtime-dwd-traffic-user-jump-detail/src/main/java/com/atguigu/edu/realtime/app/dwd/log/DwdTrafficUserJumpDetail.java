@@ -1,7 +1,7 @@
 package com.atguigu.edu.realtime.app.dwd.log;
 
 import com.alibaba.fastjson.JSONObject;
-import com.atguigu.edu.realtime.common.base.baseApp;
+import com.atguigu.edu.realtime.common.base.BaseApp;
 import com.atguigu.edu.realtime.common.constant.Constant;
 import com.atguigu.edu.realtime.common.util.FlinkSinkUtil;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
@@ -11,12 +11,6 @@ import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternFlatSelectFunction;
 import org.apache.flink.cep.PatternFlatTimeoutFunction;
@@ -24,7 +18,6 @@ import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.cep.pattern.conditions.IterativeCondition;
 import org.apache.flink.streaming.api.datastream.*;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
@@ -43,7 +36,7 @@ import java.util.Map;
  *  需要启动的进程：
  *     zk,kf,flume,DwdBaseLog,DwdTrafficUserJumpDetail
  */
-public class DwdTrafficUserJumpDetail extends baseApp {
+public class DwdTrafficUserJumpDetail extends BaseApp {
     public static void main(String[] args) {
         new DwdTrafficUserJumpDetail().start(10013,4,"dwd_traffic_user_jump_detail", Constant.TOPIC_DWD_TRAFFIC_PAGE);
     }
