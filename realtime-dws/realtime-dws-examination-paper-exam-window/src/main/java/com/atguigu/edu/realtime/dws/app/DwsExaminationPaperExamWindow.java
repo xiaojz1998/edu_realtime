@@ -5,8 +5,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.atguigu.edu.realtime.common.base.BaseApp;
 import com.atguigu.edu.realtime.common.bean.DwsExaminationPaperExamWindowBean;
 import com.atguigu.edu.realtime.common.constant.Constant;
+import com.atguigu.edu.realtime.common.function.BeanToJsonStrMapFunction;
 import com.atguigu.edu.realtime.common.function.DimAsyncFunction;
 import com.atguigu.edu.realtime.common.util.DateFormatUtil;
+import com.atguigu.edu.realtime.common.util.FlinkSinkUtil;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -51,7 +53,7 @@ public class DwsExaminationPaperExamWindow extends BaseApp {
                     @Override
                     public DwsExaminationPaperExamWindowBean map(String s) throws Exception {
                         JSONObject jsonObject = JSON.parseObject(s);
-                        long ts = jsonObject.getLong("ts") ;
+                        long ts = jsonObject.getLong("ts") *1000;
                         Double score = jsonObject.getDouble("score");
                         return DwsExaminationPaperExamWindowBean.builder()
                                 .paperId(jsonObject.getString("paper_id"))
@@ -63,7 +65,7 @@ public class DwsExaminationPaperExamWindow extends BaseApp {
                     }
                 }
         );
-        mapDS.print();
+        //mapDS.print();
         // TODO 添加水位线
         SingleOutputStreamOperator<DwsExaminationPaperExamWindowBean> withWatermarkDS = mapDS.assignTimestampsAndWatermarks(
                 WatermarkStrategy.<DwsExaminationPaperExamWindowBean>forBoundedOutOfOrderness(Duration.ZERO)
@@ -78,7 +80,7 @@ public class DwsExaminationPaperExamWindow extends BaseApp {
         );
         // TODO 分组 开窗 聚合
         KeyedStream<DwsExaminationPaperExamWindowBean, String> withKeyedDS = withWatermarkDS.keyBy(DwsExaminationPaperExamWindowBean::getPaperId);
-        WindowedStream<DwsExaminationPaperExamWindowBean, String, TimeWindow> withWindowDS = withKeyedDS.window(TumblingProcessingTimeWindows.of(Time.seconds(10)));
+        WindowedStream<DwsExaminationPaperExamWindowBean, String, TimeWindow> withWindowDS = withKeyedDS.window(TumblingEventTimeWindows.of(Time.seconds(10)));
         SingleOutputStreamOperator<DwsExaminationPaperExamWindowBean> reduceDS = withWindowDS.reduce(
                 new ReduceFunction<DwsExaminationPaperExamWindowBean>() {
                     @Override
@@ -103,7 +105,7 @@ public class DwsExaminationPaperExamWindow extends BaseApp {
                     }
                 }
         );
-        reduceDS.print("reduceDS");
+        //reduceDS.print("reduceDS");
         // TODO 维度关联补充维度信息
         //  关联试卷表
         SingleOutputStreamOperator<DwsExaminationPaperExamWindowBean> withPaperDS = AsyncDataStream.unorderedWait(
@@ -151,6 +153,8 @@ public class DwsExaminationPaperExamWindow extends BaseApp {
                 TimeUnit.SECONDS
         );
         withCourseDS.print("withCourseDS");
-        // Sink 到doris
+         //Sink 到doris
+        withCourseDS.map(new BeanToJsonStrMapFunction<>())
+                .sinkTo(FlinkSinkUtil.getDorisSink("dws_examination_paper_exam_window"));
     }
 }

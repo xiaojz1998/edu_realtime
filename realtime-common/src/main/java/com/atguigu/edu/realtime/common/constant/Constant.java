@@ -37,6 +37,7 @@ public class Constant {
     public static final String TOPIC_DWD_TRAFFIC_USER_JUMP_DETAIL = "dwd_traffic_user_jump_detail";
     public static final String TOPIC_DWD_TRADE_ORDER_PAYMENT_SUCCESS = "dwd_trade_order_payment_success";
     public static final String TOPIC_DWD_EXAMINATION_TEST_PAPER = "dwd_examination_test_paper";
+    public static final String TOPIC_DWD_EXAMINATION_TEST_QUESTION = "dwd_examination_test_question";
 
     public static final String KEYWORD_SEARCH="SEARCH";
     public static final String KEYWORD_CLICK="CLICK";

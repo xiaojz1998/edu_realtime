@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class DwsExaminationPaperScoreDurationExamWindowBea {
+public class DwsExaminationPaperScoreDurationExamWindowBean {
     // 窗口起始时间
     String stt;
 
