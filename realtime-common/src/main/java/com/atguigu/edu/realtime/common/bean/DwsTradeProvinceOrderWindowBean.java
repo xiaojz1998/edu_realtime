@@ -6,14 +6,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.util.Set;
+
 /**
  * Title: DwsTradeProvinceOrderWindowBean
- * Create on: 2024/12/16 17:20
+ * Create on: 2024/12/16
  *
- * @author Xiao Jianzhe
+ * @author zhengranran
  * @version 1.0.0
  * Description:
- *      交易域省份粒度下单各窗口汇总表
  */
 @Data
 @AllArgsConstructor
@@ -26,28 +28,33 @@ public class DwsTradeProvinceOrderWindowBean {
     // 窗口结束时间
     String edt;
 
-    // 当天日期
-    String curDate;
+    // 现在时间
+    String currentDate;
+
 
     // 省份 ID
     String provinceId;
 
+    @Builder.Default
     // 省份名称
-    String provinceName;
+    String provinceName = "";
 
+    @Builder.Default
     // 用户 ID
-    String userId;
+    String userId = "";
 
-    // 订单总额
-    Double orderTotalAmount;
+    // 累积下单总金额
+    BigDecimal orderTotalAmount;
 
     // 下单独立用户数
     Long orderUuCount;
 
-    // 订单数
+    // 累计下单次数
     Long orderCount;
 
     // 时间戳
     @JSONField(serialize = false)
     Long ts;
+    @JSONField(serialize = false)
+    Set<String> orderIdSet;
 }
