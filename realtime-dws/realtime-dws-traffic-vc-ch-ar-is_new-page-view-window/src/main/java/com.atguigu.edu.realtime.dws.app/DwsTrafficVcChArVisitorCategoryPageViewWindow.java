@@ -3,9 +3,11 @@ package com.atguigu.edu.realtime.dws.app;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.edu.realtime.common.base.BaseApp;
+import com.atguigu.edu.realtime.common.bean.DwsTradeProvinceOrderWindowBean;
 import com.atguigu.edu.realtime.common.bean.DwsTrafficForSourcePvBean;
 import com.atguigu.edu.realtime.common.constant.Constant;
 import com.atguigu.edu.realtime.common.function.BeanToJsonStrMapFunction;
+import com.atguigu.edu.realtime.common.function.DimAsyncFunction;
 import com.atguigu.edu.realtime.common.util.DateFormatUtil;
 import com.atguigu.edu.realtime.common.util.FlinkSinkUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -21,16 +23,15 @@ import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.cep.pattern.conditions.IterativeCondition;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.datastream.WindowedStream;
+import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Title: DwsTrafficVcChArIsNewPageViewWindow
@@ -107,8 +108,8 @@ public class DwsTrafficVcChArVisitorCategoryPageViewWindow extends BaseApp {
                                 sourceId,
                                 "",
                                 ar,
-                                "",
                                 isNew,
+                                "",
                                 uvCount,
                                 totalSessionCount,
                                 1L,
@@ -175,10 +176,56 @@ public class DwsTrafficVcChArVisitorCategoryPageViewWindow extends BaseApp {
                     }
                 }
         );
-        //TODO 9.将聚合结果写到Doris中
-        reduceDS.print();
+        //TODO 9.关联dim_base_source，来源维度，补充来源名称
+        SingleOutputStreamOperator<DwsTrafficForSourcePvBean> withSourceNameDS = AsyncDataStream.unorderedWait(
+                reduceDS,
+                new DimAsyncFunction<DwsTrafficForSourcePvBean>() {
+                    @Override
+                    public void addDims(DwsTrafficForSourcePvBean orderBean, JSONObject dimJsonObj) {
+                        orderBean.setSourceName(dimJsonObj.getString("source_site"));
+                    }
 
-        reduceDS
+                    @Override
+                    public String getTableName() {
+                        return "dim_base_source";
+                    }
+
+                    @Override
+                    public String getRowKey(DwsTrafficForSourcePvBean obj) {
+                        return obj.getSourceId();
+                    }
+                },
+                60,
+                TimeUnit.SECONDS
+        );
+        //withSourceNameDS.print();
+
+        //TODO 9.关联省份维度
+        SingleOutputStreamOperator<DwsTrafficForSourcePvBean> withProvinceDS = AsyncDataStream.unorderedWait(
+                withSourceNameDS,
+                new DimAsyncFunction<DwsTrafficForSourcePvBean>() {
+                    @Override
+                    public void addDims(DwsTrafficForSourcePvBean orderBean, JSONObject dimJsonObj) {
+                        orderBean.setProvinceName(dimJsonObj.getString("name"));
+                    }
+
+                    @Override
+                    public String getTableName() {
+                        return "dim_base_province";
+                    }
+
+                    @Override
+                    public String getRowKey(DwsTrafficForSourcePvBean orderBean) {
+                        return orderBean.getAr();
+                    }
+                },
+                60,
+                TimeUnit.SECONDS
+        );
+        //TODO 10.将聚合结果写到Doris中
+        withProvinceDS.print();
+
+        withProvinceDS
                 //将流中实体类对象转换为json格式字符串
                 .map(new BeanToJsonStrMapFunction<>())
                 .sinkTo(FlinkSinkUtil.getDorisSink("dws_traffic_vc_ch_ar_visitor_category_page_view_window"));

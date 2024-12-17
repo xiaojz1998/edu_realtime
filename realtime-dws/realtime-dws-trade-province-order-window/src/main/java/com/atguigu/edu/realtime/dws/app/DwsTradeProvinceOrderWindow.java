@@ -218,7 +218,7 @@ public class DwsTradeProvinceOrderWindow extends BaseApp {
                     }
                 }
         );
-        reduceDS.print();
+        //reduceDS.print();
      //TODO 9.关联省份维度
         SingleOutputStreamOperator<DwsTradeProvinceOrderWindowBean> withProvinceDS = AsyncDataStream.unorderedWait(
                 reduceDS,
@@ -245,7 +245,7 @@ public class DwsTradeProvinceOrderWindow extends BaseApp {
         );
 
         //TODO 10.将关联的结果写到Doris
-        withProvinceDS.print();
+        //withProvinceDS.print();
         withProvinceDS
                 .map(new BeanToJsonStrMapFunction<>())
                 .sinkTo(FlinkSinkUtil.getDorisSink("dws_trade_province_order_window"));
