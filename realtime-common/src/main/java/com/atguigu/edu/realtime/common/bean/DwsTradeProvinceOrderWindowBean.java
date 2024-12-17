@@ -29,7 +29,7 @@ public class DwsTradeProvinceOrderWindowBean {
     String edt;
 
     // 现在时间
-    String currentDate;
+    String curDate;
 
 
     // 省份 ID

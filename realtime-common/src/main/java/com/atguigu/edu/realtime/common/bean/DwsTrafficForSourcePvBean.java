@@ -41,11 +41,11 @@ import lombok.NoArgsConstructor;
         // 省份 ID
         String ar;        // todo 日志的common字段ar
 
-        // 省份名称
-        String provinceName;   // todo
-
         // 新老访客状态标记
         String isNew;      //todo 日志的common字段is_new
+
+        // 省份名称
+        String provinceName;   // todo
 
         // 独立访客数
         Long uvCount;     //todo ---度量值1

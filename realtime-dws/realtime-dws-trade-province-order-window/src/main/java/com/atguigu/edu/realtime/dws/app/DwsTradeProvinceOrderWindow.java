@@ -124,7 +124,7 @@ public class DwsTradeProvinceOrderWindow extends BaseApp {
                     }
                 }
         );
-      //  beanDS.print();   ---这里求独立访客，不确定对不对？
+        //beanDS.print();   //---这里求独立访客
         //使用用户和省份id分组，求独立访客数
         KeyedStream<DwsTradeProvinceOrderWindowBean, Tuple2<String, String>> dimKeyedDS = beanDS.keyBy(
                 new KeySelector<DwsTradeProvinceOrderWindowBean, Tuple2<String, String>>() {
@@ -135,6 +135,8 @@ public class DwsTradeProvinceOrderWindow extends BaseApp {
                     }
                 }
         );
+        //dimKeyedDS.print();
+
         //todo 统计独立访客状态编程
         SingleOutputStreamOperator<DwsTradeProvinceOrderWindowBean> lastVisitDateStateDS = dimKeyedDS.process(
                 new KeyedProcessFunction<Tuple2<String, String>, DwsTradeProvinceOrderWindowBean, DwsTradeProvinceOrderWindowBean>() {
@@ -159,10 +161,12 @@ public class DwsTradeProvinceOrderWindow extends BaseApp {
                             lastVisitDateState.update(curVisitdate);
                         }
                         Bean.setOrderUuCount(uvCount);
+                        out.collect(Bean);
                     }
                 }
         );
 
+       //lastVisitDateStateDS.print();
         //TODO 5.指定Watermark的生成策略以及提取事件时间字段
         SingleOutputStreamOperator<DwsTradeProvinceOrderWindowBean> withWatermarkDS = lastVisitDateStateDS.assignTimestampsAndWatermarks(
                 WatermarkStrategy
@@ -205,16 +209,16 @@ public class DwsTradeProvinceOrderWindow extends BaseApp {
                         DwsTradeProvinceOrderWindowBean orderBean = input.iterator().next();
                         String sst = DateFormatUtil.tsToDateTime(window.getStart());
                         String edt = DateFormatUtil.tsToDateTime(window.getEnd());
-                        String currentDate = DateFormatUtil.tsToDate(window.getStart() * 1000);
+                        String currentDate = DateFormatUtil.tsToDate(window.getStart());
                         orderBean.setStt(sst);
                         orderBean.setEdt(edt);
-                        orderBean.setCurrentDate(currentDate);
-                        orderBean.setOrderCount((long) orderBean.getOrderIdSet().size());
+                        orderBean.setCurDate(currentDate);
+                        orderBean.setOrderCount((long)(orderBean.getOrderIdSet().size()));
                         out.collect(orderBean);
                     }
                 }
         );
-        reduceDS.print();
+        //reduceDS.print();
      //TODO 9.关联省份维度
         SingleOutputStreamOperator<DwsTradeProvinceOrderWindowBean> withProvinceDS = AsyncDataStream.unorderedWait(
                 reduceDS,
@@ -241,7 +245,7 @@ public class DwsTradeProvinceOrderWindow extends BaseApp {
         );
 
         //TODO 10.将关联的结果写到Doris
-        withProvinceDS.print();
+        //withProvinceDS.print();
         withProvinceDS
                 .map(new BeanToJsonStrMapFunction<>())
                 .sinkTo(FlinkSinkUtil.getDorisSink("dws_trade_province_order_window"));
