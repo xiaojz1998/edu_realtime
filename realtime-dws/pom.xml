@@ -17,6 +17,8 @@
         <module>dws-trade-pay-suc-window</module>
         <module>realtime-dws-traffic-page-view-window</module>
         <module>realtime-dws-trade-province-order-window</module>
+        <module>realtime-dws-trade-course-order-window</module>
+        <module>realtime-dws-trade-source-order-window</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 

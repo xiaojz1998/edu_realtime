@@ -3,12 +3,16 @@ package com.atguigu.edu.realtime.dws.app;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.edu.realtime.common.base.BaseApp;
 import com.atguigu.edu.realtime.common.bean.DwsTradeOrderWindowBean;
+import com.atguigu.edu.realtime.common.bean.DwsTradePaySucWindowBean;
 import com.atguigu.edu.realtime.common.constant.Constant;
+import com.atguigu.edu.realtime.common.function.BeanToJsonStrMapFunction;
 import com.atguigu.edu.realtime.common.util.DateFormatUtil;
+import com.atguigu.edu.realtime.common.util.FlinkSinkUtil;
 import com.atguigu.edu.realtime.common.util.TimestampLtz3CompareUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.state.StateTtlConfig;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -21,6 +25,9 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
 import javax.print.DocFlavor;
@@ -34,6 +41,9 @@ import java.time.Duration;
  * @version 1.0.0
  * Description:
  *  交易域支付成功各窗口汇总表
+ *  需要的进程：
+ *   zk、kafka、maxwell、hdfs、hbase、Dwdlog、DwdTradeOrderDetail、DwdTradeOrderPaySucDetail DwsTradePaySucWindow
+ *
  *
  */
 public class DwsTradePaySucWindow extends BaseApp {
@@ -65,17 +75,17 @@ public class DwsTradePaySucWindow extends BaseApp {
         );
         //jsonObjDS.print();
         // 水位线
-        SingleOutputStreamOperator<JSONObject> withWatermarkDS = jsonObjDS.assignTimestampsAndWatermarks(
-                WatermarkStrategy.<JSONObject>forBoundedOutOfOrderness(Duration.ZERO)
-                        .withTimestampAssigner(
-                                new SerializableTimestampAssigner<JSONObject>() {
-                                    @Override
-                                    public long extractTimestamp(JSONObject jsonObject, long l) {
-                                        return jsonObject.getLong("ts") * 1000;
-                                    }
-                                }
-                        )
-        );
+//        SingleOutputStreamOperator<JSONObject> withWatermarkDS = jsonObjDS.assignTimestampsAndWatermarks(
+//                WatermarkStrategy.<JSONObject>forBoundedOutOfOrderness(Duration.ZERO)
+//                        .withTimestampAssigner(
+//                                new SerializableTimestampAssigner<JSONObject>() {
+//                                    @Override
+//                                    public long extractTimestamp(JSONObject jsonObject, long l) {
+//                                        return jsonObject.getLong("ts") * 1000;
+//                                    }
+//                                }
+//                        )
+//        );
         // TODO 按照订单明细ID分组
         KeyedStream<JSONObject, String> keyedDS = jsonObjDS.keyBy(
                 new KeySelector<JSONObject, String>() {
@@ -139,40 +149,81 @@ public class DwsTradePaySucWindow extends BaseApp {
         );
 
         // 判断是否为独立用户
-        SingleOutputStreamOperator<DwsTradeOrderWindowBean> uvCountStream = keyedUserIdDS.process(new KeyedProcessFunction<String, JSONObject, DwsTradeOrderWindowBean>() {
-            ValueState<String> lastOrderDtState = null;
+        SingleOutputStreamOperator<DwsTradePaySucWindowBean> uvCountDS = keyedUserIdDS.process(
+                new KeyedProcessFunction<String, JSONObject, DwsTradePaySucWindowBean>() {
+                    ValueState<String> lastPayDtState = null;
 
-            @Override
-            public void open(Configuration parameters) throws Exception {
-                lastOrderDtState = getRuntimeContext().getState(new ValueStateDescriptor<String>("last_order_dt_state", String.class));
-            }
+                    @Override
+                    public void open(Configuration parameters) throws Exception {
+                        lastPayDtState = getRuntimeContext().getState(new ValueStateDescriptor<String>("last_pay_dt_state", String.class));
+                    }
 
-            @Override
-            public void processElement(JSONObject jsonObj, Context ctx, Collector<DwsTradeOrderWindowBean> out) throws Exception {
-                long ts = jsonObj.getLong("ts") * 1000;
-                String curDate = DateFormatUtil.tsToDate(ts);
-                String lastOrderDt = lastOrderDtState.value();
-                System.out.println("lastOrderDt:"+lastOrderDt+" curDate:"+curDate);
-                long orderUvCount = 0L;
-                long newOrderUserCount = 0L;
-                if (StringUtils.isEmpty(lastOrderDt)) {
-                    // 是新用户
-                    orderUvCount = 1L;
-                    newOrderUserCount = 1L;
-                    lastOrderDtState.update(curDate);
-                } else if (lastOrderDt.compareTo(curDate) < 0) {
+                    @Override
+                    public void processElement(JSONObject jsonObj, KeyedProcessFunction<String, JSONObject, DwsTradePaySucWindowBean>.Context context, Collector<DwsTradePaySucWindowBean> collector) throws Exception {
+                        long ts = jsonObj.getLong("ts") * 1000;
+                        String curDate = DateFormatUtil.tsToDate(ts);
+                        String lastOrderDt = lastPayDtState.value();
+                        long payUvCount = 0L;
+                        long newPayUserCount = 0L;
+                        if (lastOrderDt == null) {
+                            // 是新用户
+                            payUvCount = 1L;
+                            newPayUserCount = 1L;
+                            lastPayDtState.update(curDate);
+                        } else if (lastOrderDt.compareTo(curDate) < 0) {
 
-                    orderUvCount = 1L;
+                            payUvCount = 1L;
+                        }
+                        // 判断是独立用户才需要往下游传递
+                        if (payUvCount != 0) {
+                            collector.collect(DwsTradePaySucWindowBean.builder()
+                                    .paySucUvCount(payUvCount)
+                                    .paySucNewUserCount(newPayUserCount)
+                                    .ts(ts)
+                                    .build());
+                        }
+                    }
                 }
-                // 判断是独立用户才需要往下游传递
-                if (orderUvCount != 0) {
-                    out.collect(DwsTradeOrderWindowBean.builder()
-                            .orderUvCount(orderUvCount)
-                            .newOrderUserCount(newOrderUserCount)
-                            .ts(ts)
-                            .build());
-                }
-            }
-        });
+        );
+
+        SingleOutputStreamOperator<DwsTradePaySucWindowBean> withWatermarkDS = uvCountDS.assignTimestampsAndWatermarks(
+                WatermarkStrategy.<DwsTradePaySucWindowBean>forBoundedOutOfOrderness(Duration.ofSeconds(2))
+                        .withTimestampAssigner(new SerializableTimestampAssigner<DwsTradePaySucWindowBean>() {
+                            @Override
+                            public long extractTimestamp(DwsTradePaySucWindowBean element, long recordTimestamp) {
+                                return element.getTs();
+                            }
+                        })
+        );
+
+        SingleOutputStreamOperator<DwsTradePaySucWindowBean> reduceDS =  withWatermarkDS.windowAll(TumblingEventTimeWindows.of(org.apache.flink.streaming.api.windowing.time.Time.seconds(10l)))
+                .reduce(
+                        new ReduceFunction<DwsTradePaySucWindowBean>() {
+                            @Override
+                            public DwsTradePaySucWindowBean reduce(DwsTradePaySucWindowBean dwsTradePaySucWindowBean, DwsTradePaySucWindowBean t1) throws Exception {
+                                dwsTradePaySucWindowBean.setPaySucUvCount(dwsTradePaySucWindowBean.getPaySucUvCount() + t1.getPaySucUvCount());
+                                dwsTradePaySucWindowBean.setPaySucNewUserCount(dwsTradePaySucWindowBean.getPaySucNewUserCount() + t1.getPaySucNewUserCount());
+                                return dwsTradePaySucWindowBean;
+                            }
+                        },
+                        new ProcessAllWindowFunction<DwsTradePaySucWindowBean, DwsTradePaySucWindowBean, TimeWindow>() {
+                            @Override
+                            public void process(ProcessAllWindowFunction<DwsTradePaySucWindowBean, DwsTradePaySucWindowBean, TimeWindow>.Context context, Iterable<DwsTradePaySucWindowBean> iterable, Collector<DwsTradePaySucWindowBean> collector) throws Exception {
+                                String start = DateFormatUtil.tsToDateTime(context.window().getStart());
+                                String end = DateFormatUtil.tsToDateTime(context.window().getEnd());
+                                String curDate = DateFormatUtil.tsToDate(context.window().getStart());
+                                DwsTradePaySucWindowBean next = iterable.iterator().next();
+                                next.setStt(start);
+                                next.setEdt(end);
+                                next.setCurDate(curDate);
+                                collector.collect(next);
+                            }
+                        }
+                );
+
+        reduceDS.print("订单统计：");
+        reduceDS.map(new BeanToJsonStrMapFunction<>())
+                .sinkTo(FlinkSinkUtil.getDorisSink("dws_trade_pay_suc_window"));
+
     }
 }

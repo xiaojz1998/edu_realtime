@@ -71,7 +71,7 @@ public class DwsTradeOrderWindow extends BaseApp {
                     }
                 }
         );
-        // 按照唯一键进行分组
+        // 按照id键进行分组
         KeyedStream<JSONObject, String> keyedDS = jsonObjDS.keyBy(
                 new KeySelector<JSONObject, String>() {
                     @Override
