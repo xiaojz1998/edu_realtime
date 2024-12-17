@@ -21,8 +21,8 @@ import java.time.ZoneId;
  *   读取 dwd_traffic_page_log 主题数据，
  *   筛选订单页日志，关联三张表获得交易域下单事务事实表，写入 Kafka 对应主题。
  *   下单事实表
- *
  *   开启：
+ *      zk kafka maxwell flume DwdBaseLog DwdTradeOrderDetail
  *
  */
 public class DwdTradeOrderDetail extends BaseSQLAPP {

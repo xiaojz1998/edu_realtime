@@ -13,6 +13,8 @@
         <module>realtime-dws-examinnation-paper-score-duration-exam-window</module>
         <module>realtime-dws-traffic-source-keyword-page-view-window</module>
         <module>realtime-dws-traffic-vc-ch-ar-is_new-page-view-window</module>
+        <module>realtime-dws-trade-cart-add-window</module>
+        <module>dws-trade-pay-suc-window</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
