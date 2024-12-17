@@ -1,4 +1,4 @@
-package com.atguigu.gmall;
+package com.atguigu.edu;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
